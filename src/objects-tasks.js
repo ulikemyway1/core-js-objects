@@ -264,8 +264,12 @@ function fromJSON(proto, json) {
  *      { country: 'Russia',  city: 'Saint Petersburg' }
  *    ]
  */
-function sortCitiesArray(/* arr */) {
-  throw new Error('Not implemented');
+function sortCitiesArray(arr) {
+  return arr.sort((a, b) => {
+    if (a.country === b.country)
+      return a.city.charCodeAt(0) - b.city.charCodeAt(0);
+    return a.country.charCodeAt(0) - b.country.charCodeAt(0);
+  });
 }
 
 /**
@@ -298,8 +302,21 @@ function sortCitiesArray(/* arr */) {
  *    "Poland" => ["Lodz"]
  *   }
  */
-function group(/* array, keySelector, valueSelector */) {
-  throw new Error('Not implemented');
+function group(array, keySelector, valueSelector) {
+  const citiesMap = new Map();
+  array.forEach((item) => {
+    if (citiesMap.has(keySelector.call(item, item))) {
+      citiesMap.set(keySelector.call(item, item), [
+        ...citiesMap.get(keySelector.call(item, item)),
+        valueSelector.call(item, item),
+      ]);
+    } else {
+      citiesMap.set(keySelector.call(item, item), [
+        valueSelector.call(item, item),
+      ]);
+    }
+  });
+  return citiesMap;
 }
 
 /**
