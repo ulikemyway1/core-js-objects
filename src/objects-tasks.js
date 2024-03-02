@@ -373,35 +373,177 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
-const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
+const cssSelectorBuilder = (function Create() {
+  return {
+    selectorIsBinded: false,
+    el: '',
+    idStr: '',
+    atr: [],
+    classes: [],
+    psdClass: [],
+    psdElement: '',
+    element(value) {
+      if (this.el.length !== 0) {
+        throw new Error(
+          'Element, id and pseudo-element should not occur more then one time inside the selector'
+        );
+      }
+      if (this.stringify().length !== 0)
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.el = value;
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.el = value;
+      return newSelector;
+    },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
+    id(value) {
+      if (this.idStr.length !== 0) {
+        throw new Error(
+          'Element, id and pseudo-element should not occur more then one time inside the selector'
+        );
+      }
+      if (this.stringify().replace(this.el, '') !== '')
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.idStr = `#${value}`;
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.idStr = `#${value}`;
+      return newSelector;
+    },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
+    class(value) {
+      if (
+        this.stringify().replace(
+          this.el + this.idStr + this.classes.join(''),
+          ''
+        ) !== ''
+      )
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.classes.push(`.${value}`);
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.classes.push(`.${value}`);
+      return newSelector;
+    },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
+    attr(value) {
+      if (
+        this.stringify().replace(
+          this.el + this.idStr + this.classes.join('') + this.atr.join(''),
+          ''
+        ) !== ''
+      )
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.atr.push(`[${value}]`);
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.atr.push(`[${value}]`);
+      return newSelector;
+    },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
+    pseudoClass(value) {
+      if (
+        this.stringify().replace(
+          this.el +
+            this.idStr +
+            this.classes.join('') +
+            this.atr.join('') +
+            this.psdClass.join(''),
+          ''
+        ) !== ''
+      )
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.psdClass.push(`:${value}`);
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.psdClass.push(`:${value}`);
+      return newSelector;
+    },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
+    pseudoElement(value) {
+      if (
+        this.stringify().replace(
+          this.el +
+            this.idStr +
+            this.classes.join('') +
+            this.atr.join('') +
+            this.psdClass.join('') +
+            this.psdElement,
+          ''
+        ) !== ''
+      )
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+      if (this.psdElement.length !== 0) {
+        throw new Error(
+          'Element, id and pseudo-element should not occur more then one time inside the selector'
+        );
+      }
+      this.isBinded();
+      if (this.selectorIsBinded) {
+        this.psdElement = `::${value}`;
+        return this;
+      }
+      const newSelector = new Create();
+      newSelector.psdElement = `::${value}`;
+      return newSelector;
+    },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
-};
+    combine(selector1, combinator, selector2) {
+      const combined = {
+        str: `${selector1.stringify()} ${combinator} ${selector2.stringify()}`,
+        stringify() {
+          return this.str;
+        },
+      };
+      return combined;
+    },
+    stringify() {
+      return `${this.el}${this.atr.join('')}${this.idStr}${this.classes.join(
+        ''
+      )}${this.psdClass.join('')}${this.psdElement}`;
+    },
+    isBinded() {
+      if (
+        this.el.length !== 0 ||
+        this.idStr.length !== 0 ||
+        this.atr.length !== 0 ||
+        this.classes.length !== 0 ||
+        this.psdClass.length !== 0 ||
+        this.psdElement.length !== 0
+      ) {
+        this.selectorIsBinded = true;
+      }
+    },
+  };
+})();
 
 module.exports = {
   shallowCopy,
